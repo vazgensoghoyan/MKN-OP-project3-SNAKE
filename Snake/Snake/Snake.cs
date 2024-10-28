@@ -4,21 +4,27 @@ public static class SnakeGame
 {
     private static List<Coords> _snakeCoords;
     private static List<Coords> _applesCoords;
+
     private static EDirection _direction;
+    private static EDirection _readDirection;
+
+    private static bool _gameIsOn;
 
     private static Int32 T;
 
-    private const Int32 _GroundHeight = 15;
-    private const Int32 _GroundWidth = 15;
+    private const Int32 GroundHeight = 10;
+    private const Int32 GroundWidth = 10;
 
-    private const Int32 _MaxAppleCount = 10;
-    private const Int32 _AppleAppearanceFrequency = 6;
+    private const Int32 MaxAppleCount = 10;
+    private const Int32 AppleAppearanceFrequency = 6;
 
     static SnakeGame()
     {
         _snakeCoords = [ new Coords(7, 0) ];
         _applesCoords = [];
+
         _direction = EDirection.Right;
+        _readDirection = EDirection.Right;
 
         T = 600;
     }
@@ -28,6 +34,8 @@ public static class SnakeGame
         Console.Clear();
         Console.OutputEncoding = System.Text.Encoding.Unicode;
         Console.CursorVisible = false;
+
+        _gameIsOn = true;
 
         var readingThread = new Thread(Read);
         var drawingThread = new Thread(Draw);
@@ -39,11 +47,26 @@ public static class SnakeGame
     private static void Draw()
     {
         var frameCount = 0;
+        Coords newCoords;
         
         while (true)
         {
-            var newCoords = _snakeCoords[^1] + Coords.DirectionToCoords( _direction );
-            
+            if ( !_gameIsOn ) break;
+
+            if ( !Coords.AreOppositeDirections( _readDirection, _direction ) )
+                _direction = _readDirection;
+
+            newCoords = _snakeCoords[^1] + Coords.DirectionToCoords( _direction );
+
+            newCoords = new Coords( (GroundWidth + newCoords.X) % GroundWidth, 
+                                    (GroundHeight + newCoords.Y) % GroundHeight );
+
+            if ( _snakeCoords.Contains( newCoords ) )
+            {
+                _gameIsOn = false;
+                break;
+            }
+
             if ( _applesCoords.Contains( newCoords ) )
             {
                 _applesCoords.Remove( newCoords );
@@ -58,15 +81,18 @@ public static class SnakeGame
             PrintAll();
 
             frameCount++;
-            if ( frameCount > _AppleAppearanceFrequency )
+            if ( frameCount > AppleAppearanceFrequency )
             {
-                if ( _applesCoords.Count() < _MaxAppleCount )
+                if ( _applesCoords.Count() < MaxAppleCount )
                     AddRandomApple();
                 frameCount = 0;
             }
 
             Thread.Sleep(T);
         }
+
+        Console.Clear();
+        Console.WriteLine("Thanks for the game!");
     }
 
     private static void AddRandomApple()
@@ -77,10 +103,10 @@ public static class SnakeGame
 
         do
         {
-            x = rnd.Next(0, _GroundWidth - 5);
-            y = rnd.Next(0, _GroundHeight - 5);
+            x = rnd.Next(0, GroundWidth - 5);
+            y = rnd.Next(0, GroundHeight - 5);
         } 
-        while ( _snakeCoords.Contains( new Coords(x, y) ));
+        while ( _snakeCoords.Contains( new Coords(x, y) ) );
 
         _applesCoords.Add( new Coords(x, y) );
     }
@@ -89,26 +115,26 @@ public static class SnakeGame
     {
         while (true)
         {
-            var newDirection = _direction;
+            if ( !_gameIsOn ) return;
 
             switch ( Console.ReadKey(true).Key )
             {
                 case ConsoleKey.W:
-                    newDirection = EDirection.Down;
+                    _readDirection = EDirection.Down;
                     break;
                 case ConsoleKey.D:
-                    newDirection = EDirection.Right;
+                    _readDirection = EDirection.Right;
                     break;
                 case ConsoleKey.S:
-                    newDirection = EDirection.Up;
+                    _readDirection = EDirection.Up;
                     break;
                 case ConsoleKey.A:
-                    newDirection = EDirection.Left;
+                    _readDirection = EDirection.Left;
                     break;
-            }
-
-            if ( !Coords.AreOppositeDirections(newDirection, _direction) )
-                _direction = newDirection;
+                case ConsoleKey.Escape:
+                    _gameIsOn = false;
+                    break;
+            };
         }
     }
 
@@ -117,19 +143,27 @@ public static class SnakeGame
         Console.SetCursorPosition(0, 0);
 
         Console.Write("╔");
-        for (int i = 0; i < _GroundWidth; i++)
+        for (int i = 0; i < 2 * GroundWidth + 1; i++)
         {
-            Console.Write("══");
+            Console.Write("═");
         }
         Console.Write("╗\n");
 
-        for (int i = 0; i < _GroundHeight; i++)
+        for (int i = 0; i < GroundHeight; i++)
         {
-            Console.Write("║");
-            for (int j  = 0; j < _GroundWidth; j++)
+            Console.Write("║ ");
+            for (int j  = 0; j < GroundWidth; j++)
             {
                 if ( _snakeCoords.Contains( new Coords(i, j) ) )
-                    Console.Write("●");
+                {
+                    if ( _snakeCoords[^1] == new Coords(i, j) )
+                    {
+                        Console.ForegroundColor = ConsoleColor.Red;
+                        Console.Write("●");
+                        Console.ForegroundColor = ConsoleColor.White;
+                    }
+                    else Console.Write("●");
+                }
                 else if ( _applesCoords.Contains( new Coords(i, j) ) )
                     Console.Write("○");
                 else
@@ -141,9 +175,9 @@ public static class SnakeGame
         }
 
         Console.Write("╚");
-        for (int i = 0; i < _GroundWidth; i++)
+        for (int i = 0; i < 2 * GroundWidth + 1; i++)
         {
-            Console.Write("══");
+            Console.Write("═");
         }
         Console.Write("╝");
     }
