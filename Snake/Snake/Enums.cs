@@ -7,10 +7,3 @@ public enum EDirection
     Down,
     Left
 }
-
-public enum EField
-{
-    Empty,
-    Snake,
-    Apple
-}

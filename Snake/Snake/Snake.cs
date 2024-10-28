@@ -8,7 +8,7 @@ public static class SnakeGame
     private static Int32 T;
 
     private const Int32 _groundHeight = 20;
-    private const Int32 _groundWidth = 40;
+    private const Int32 _groundWidth = 30;
 
     static SnakeGame()
     {
@@ -20,6 +20,9 @@ public static class SnakeGame
 
     public static void StartGame()
     {
+        Console.OutputEncoding = System.Text.Encoding.Unicode;
+        Console.CursorVisible = false;
+
         var readingThread = new Thread(Read);
         var drawingThread = new Thread(Draw);
 
@@ -31,18 +34,9 @@ public static class SnakeGame
     {
         while (true)
         {
-            Int32 horizontally = 0;
-            Int32 vertically = 0;
+            _snakeCoords[0] += Coords.DirectionToCoords( _direction );
 
-            if (_direction is EDirection.Left or EDirection.Right)
-                vertically = (_direction is EDirection.Right ? 1 : -1);
-
-            if (_direction is EDirection.Up or EDirection.Down)
-                horizontally = (_direction is EDirection.Up ? 1 : -1);
-
-            _snakeCoords[0] += new Coords(horizontally, vertically);
-
-            Print();
+            PrintAll();
 
             Thread.Sleep(T);
         }
@@ -50,20 +44,40 @@ public static class SnakeGame
 
     private static void Read()
     {
+
         while (true)
         {
+            var newDirection = _direction;
 
+            switch ( Console.ReadKey(true).Key )
+            {
+                case ConsoleKey.W:
+                    newDirection = EDirection.Down;
+                    break;
+                case ConsoleKey.D:
+                    newDirection = EDirection.Right;
+                    break;
+                case ConsoleKey.S:
+                    newDirection = EDirection.Up;
+                    break;
+                case ConsoleKey.A:
+                    newDirection = EDirection.Left;
+                    break;
+            }
+
+            if ( !Coords.AreOppositeDirections(newDirection, _direction) )
+                _direction = newDirection;
         }
     }
 
-    public static void Print()
+    public static void PrintAll()
     {
         Console.SetCursorPosition(0, 0);
 
         Console.Write("╔");
         for (int i = 0; i < _groundWidth; i++)
         {
-            Console.Write("═");
+            Console.Write("══");
         }
         Console.Write("╗\n");
 
@@ -72,7 +86,8 @@ public static class SnakeGame
             Console.Write("║");
             for (int j  = 0; j < _groundWidth; j++)
             {
-                Console.Write( _snakeCoords.Contains( new Coords(i, j) ) ? 'o' : ' ' );
+                Console.Write( _snakeCoords.Contains( new Coords(i, j) ) ? '●' : ' ' );
+                Console.Write(' ');
             }
             Console.Write("║\n");
         }
@@ -80,7 +95,7 @@ public static class SnakeGame
         Console.Write("╚");
         for (int i = 0; i < _groundWidth; i++)
         {
-            Console.Write("═");
+            Console.Write("══");
         }
         Console.Write("╝");
     }
