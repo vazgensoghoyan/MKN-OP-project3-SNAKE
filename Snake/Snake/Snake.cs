@@ -56,10 +56,7 @@ public static class SnakeGame
             if ( !Coords.AreOppositeDirections( _readDirection, _direction ) )
                 _direction = _readDirection;
 
-            newCoords = _snakeCoords[^1] + Coords.DirectionToCoords( _direction );
-
-            newCoords = new Coords( (GroundWidth + newCoords.X) % GroundWidth, 
-                                    (GroundHeight + newCoords.Y) % GroundHeight );
+            newCoords = GetNewCoords();
 
             if ( _snakeCoords.Contains( newCoords ) )
             {
@@ -78,6 +75,8 @@ public static class SnakeGame
                 _snakeCoords.Add( newCoords );
             }
 
+            MakeFaster();
+
             PrintAll();
 
             frameCount++;
@@ -92,7 +91,25 @@ public static class SnakeGame
         }
 
         Console.Clear();
-        Console.WriteLine("Thanks for the game!");
+        Console.WriteLine("Thanks for the game! Tap to continue");
+    }
+
+    private static Coords GetNewCoords()
+    {
+        var c = _snakeCoords[^1] + Coords.DirectionToCoords(_direction);
+
+        c = new Coords( (GroundWidth + c.X) % GroundWidth,
+                        (GroundHeight + c.Y) % GroundHeight);
+        
+        return c;
+    }
+
+    private static void MakeFaster()
+    {
+        var snakeLength = _snakeCoords.Count();
+
+        if ( 10 <= snakeLength && snakeLength <= 30 )
+            T = 750 - 15 * snakeLength;
     }
 
     private static void AddRandomApple()
